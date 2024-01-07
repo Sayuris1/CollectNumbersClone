@@ -5,15 +5,16 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 
-namespace Rootcraft.CollectNumber.SceneManagement
+namespace Rootcraft.SceneManagement
 {
     public class InitalLoader : Singleton<InitalLoader>
     {
         [SerializeField] private AssetReference _persistentManagersScene;
         [SerializeField] private AssetReference _mainScene;
 
-        private void Start()
+        protected override void Awake()
         {
+            base.Awake();
             // Load MainScene after fully loading PersistentManagers
             LoadSceneAsync(_persistentManagersScene,
                 () => LoadSceneAsync(_mainScene,
