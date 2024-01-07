@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Rootcraft.CollectNumber.Resource;
+using static Rootcraft.CollectNumber.Extensions;
 using UnityEngine;
 
 namespace Rootcraft.CollectNumber.Level
@@ -12,6 +13,7 @@ namespace Rootcraft.CollectNumber.Level
         public Piece[,] PieceGrid;
 
         [SerializeField] private GameObject _piecePrefab;
+        [SerializeField] private Vector3 PieceMargin;
 
         private ResourceManager _rmInstance;
 
@@ -30,11 +32,6 @@ namespace Rootcraft.CollectNumber.Level
             _rmInstance.NumbersAndColorsLoadHandle.Completed += (_) => CreateNewLevel(Row, Column);
         }
 
-        private void Update()
-        {
-            
-        }
-
         private void CreateNewLevel(int maxRow, int maxColumn)
         {
             // Need to store column data since we are going to add to the same column in the next outer loop step.
@@ -48,34 +45,43 @@ namespace Rootcraft.CollectNumber.Level
                 {
                     ChainedPiece currentColumnChainedPiece = chainedPiecePerColumn[x];
                     PlaceNewPieceInGrid(ref currentColumnChainedPiece, ref currentRowChainedPiece, x, y);
+                    // Struct is passed by value, so we need to re-assign
+                    chainedPiecePerColumn[x] = currentColumnChainedPiece;
                 }
             }
         }
 
+
         private void PlaceNewPieceInGrid(ref ChainedPiece currentColumnChainedPiece, ref ChainedPiece currentRowChainedPiece, int x, int y)
         {
-            if (currentRowChainedPiece.ChainedCount < 2 && currentColumnChainedPiece.ChainedCount < 2)
-            {
-                Piece newPiece = InstantiatePiece(x, y);
-
-                UpdateChainedPiece(newPiece, ref currentRowChainedPiece);
-                UpdateChainedPiece(newPiece, ref currentColumnChainedPiece);
-            }
+            Piece newPiece;
+            if (currentRowChainedPiece.ChainedCount < 1 && currentColumnChainedPiece.ChainedCount < 1)
+                newPiece = InstantiatePiece(x, y);
             else
             {
-                List<string> ignoreList = new() {currentRowChainedPiece.PieceNo.ToString()};
-                Piece newPiece = InstantiatePiece(x, y, ignoreList);
+                List<string> ignoreList = new();
+                ignoreList.AddChainedPieceIfPop(currentRowChainedPiece).AddChainedPieceIfPop(currentColumnChainedPiece);
+
+                newPiece = InstantiatePiece(x, y, ignoreList);
                 newPiece.PopNumbers.Add(currentRowChainedPiece.PieceNo);
 
-                UpdateChainedPiece(newPiece, ref currentRowChainedPiece);
-                UpdateChainedPiece(newPiece, ref currentColumnChainedPiece);
             }
+
+            PieceGrid[x,y] = newPiece;
+
+            UpdateChainedPiece(newPiece, ref currentRowChainedPiece);
+            UpdateChainedPiece(newPiece, ref currentColumnChainedPiece);
         }
 
         private Piece InstantiatePiece(int row, int column, List<string> ignoreList = null)
         {
             NumbersAndColorsSO so = _rmInstance.GetRandomNumberAndColor(ignoreList);
-            return Instantiate(_piecePrefab).GetComponent<Piece>().Init(so, row, column);
+            Piece newPiece = Instantiate(_piecePrefab).GetComponent<Piece>().Init(so, row, column);
+
+            Vector3 pos = new(row * PieceMargin.x, column * PieceMargin.y, 0);
+            newPiece.transform.position = pos;
+
+            return newPiece;
         }
 
         private void UpdateChainedPiece(Piece piece, ref ChainedPiece chainedPiece)
@@ -87,6 +93,8 @@ namespace Rootcraft.CollectNumber.Level
                 chainedPiece.PieceNo = piece.PieceNo;
                 chainedPiece.ChainedCount = 0;
             }
+
+            Debug.Log($"no: {chainedPiece.PieceNo}, count: {chainedPiece.ChainedCount}");
         }
     }
 }

@@ -49,3 +49,4 @@ MonoBehaviour:
   Row: 5
   Column: 5
   _piecePrefab: {fileID: 4022911944757756946, guid: adab440f82ab3fe48968a8ccd04b39df, type: 3}
+  PieceMargin: {x: 20, y: -20, z: 0}
