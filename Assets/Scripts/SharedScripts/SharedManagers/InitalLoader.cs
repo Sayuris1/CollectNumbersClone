@@ -17,22 +17,26 @@ namespace Rootcraft.SceneManagement
             base.Awake();
             // Load MainScene after fully loading PersistentManagers
             LoadSceneAsync(_persistentManagersScene,
-                () => LoadSceneAsync(_mainScene,
-                    () => UnloadInitalScene()));
+                (_) => LoadSceneAsync(_mainScene,
+                    (handle) =>
+                    {
+                        SceneManager.SetActiveScene(handle.Result.Scene);
+                        UnloadInitalScene();
+                    }));
         }
 
-        private void LoadSceneAsync(AssetReference scene, Action OnComplete = null)
+        private void LoadSceneAsync(AssetReference scene, Action<AsyncOperationHandle<SceneInstance>> OnComplete = null)
         {
             AsyncOperationHandle<SceneInstance> managerLoadHandler = scene.LoadSceneAsync(LoadSceneMode.Additive);
             managerLoadHandler.Completed += (AsyncOperationHandle<SceneInstance> handle) => IsLoadSucceeded(handle, scene.ToString(), OnComplete);;
         }
 
-        private void IsLoadSucceeded(AsyncOperationHandle<SceneInstance> handle, string sceneName, Action OnComplete = null)
+        private void IsLoadSucceeded(AsyncOperationHandle<SceneInstance> handle, string sceneName, Action<AsyncOperationHandle<SceneInstance>> OnComplete = null)
         {
             if (handle.Status != AsyncOperationStatus.Succeeded)
                 Debug.LogError($"Scene loading failed, {sceneName} stays unloaded.");
             else
-                OnComplete?.Invoke();
+                OnComplete?.Invoke(handle);
         }
 
         private void UnloadInitalScene()

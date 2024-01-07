@@ -35,7 +35,7 @@ namespace Rootcraft.CollectNumber.InputSystem
             };
         }
 
-        // Similuate touchscreen in editor
+        // Simulate touchscreen in editor
         #if UNITY_EDITOR
             private void Update()
             {
