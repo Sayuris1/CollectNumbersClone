@@ -64,9 +64,8 @@ namespace Rootcraft.CollectNumber.Resource
             return _numbersAndColorsDict[key];
         }
 
-        public NumbersAndColorsSO GetRandomNumberAndColor(List<string> ignoreList = null)
+        public NumbersAndColorsSO GetRandomNumberAndColor(List<string> ignoreList)
         {
-            ignoreList ??= new();
             string randomKey = _numbersAndColorsKeyList.Except(ignoreList).ElementAt(Random.Range(0, _numbersAndColorsKeyList.Count - ignoreList.Count));
 
             return _numbersAndColorsDict[randomKey];

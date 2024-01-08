@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Rootcraft.CollectNumber.Resource;
 using UnityEngine;
 using Rootcraft.CollectNumber.Level;
+using System;
 
 namespace Rootcraft.CollectNumber
 {
@@ -39,7 +40,7 @@ namespace Rootcraft.CollectNumber
         }
 
         #region Grid
-        public void CreateGrid()
+        public void CreateGrid(LevelsSO level)
         {
             // Need to store column data since we are going to add to the same column in the next outer loop step.
             ChainedPiece[] chainedPiecePerColumn = new ChainedPiece[Row];
@@ -52,13 +53,17 @@ namespace Rootcraft.CollectNumber
                 {
                     ChainedPiece currentColumnChainedPiece = chainedPiecePerColumn[x];
 
-                    Piece newPiece = PlaceNewPieceInGrid(ref currentColumnChainedPiece, ref currentRowChainedPiece, x, y);
+                    List<string> levelIgnoreList = LevelManager.Instance.GetLevelIgnoreList(x, y);
+
+                    Piece newPiece = PlaceNewPieceInGrid(ref currentColumnChainedPiece, ref currentRowChainedPiece, x, y, levelIgnoreList);
                     UpdateChainedPiece(newPiece, ref currentRowChainedPiece);
                     UpdateChainedPiece(newPiece, ref currentColumnChainedPiece);
                     // Struct is passed by value, so we need to re-assign
                     chainedPiecePerColumn[x] = currentColumnChainedPiece;
                 }
             }
+
+            AddSpesificPieceToPos(level);
         }
 
         public void FallDown(List<PiecePos> piecePoses)
@@ -107,7 +112,7 @@ namespace Rootcraft.CollectNumber
             for (int i = 0; i < posesLengt; i++)
             {
                 PiecePos pos = piecePoses[i];
-                newPieces[i] = InstantiatePiece(pos.x, pos.y);
+                newPieces[i] = InstantiatePiece(pos.x, pos.y, new());
             }
 
             for (int i = 0; i < posesLengt; i++)
@@ -132,7 +137,7 @@ namespace Rootcraft.CollectNumber
         #endregion
 
         #region Piece
-        private Piece InstantiatePiece(int row, int column, List<string> ignoreList = null)
+        private Piece InstantiatePiece(int row, int column, List<string> ignoreList)
         {
             NumbersAndColorsSO so = _rmInstance.GetRandomNumberAndColor(ignoreList);
             Piece newPiece = Instantiate(_piecePrefab).GetComponent<Piece>().Init(so, row, column, PieceMargin);
@@ -142,14 +147,16 @@ namespace Rootcraft.CollectNumber
             return newPiece;
         }
 
-        private Piece PlaceNewPieceInGrid(ref ChainedPiece currentColumnChainedPiece, ref ChainedPiece currentRowChainedPiece, int x, int y)
+        private Piece PlaceNewPieceInGrid(ref ChainedPiece currentColumnChainedPiece, ref ChainedPiece currentRowChainedPiece, int x, int y, List<string> ignoreList)
         {
+            ignoreList ??= new();
+            
+
             Piece newPiece;
             if (currentRowChainedPiece.ChainedCount < 1 && currentColumnChainedPiece.ChainedCount < 1)
-                newPiece = InstantiatePiece(x, y);
+                newPiece = InstantiatePiece(x, y, ignoreList);
             else
             {
-                List<string> ignoreList = new();
                 ignoreList.AddChainedPieceIfPop(currentRowChainedPiece).AddChainedPieceIfPop(currentColumnChainedPiece);
 
                 newPiece = InstantiatePiece(x, y, ignoreList);
@@ -167,8 +174,17 @@ namespace Rootcraft.CollectNumber
                 chainedPiece.PieceNo = piece.PieceNo;
                 chainedPiece.ChainedCount = 0;
             }
+        }
 
-            Debug.Log($"no: {chainedPiece.PieceNo}, count: {chainedPiece.ChainedCount}");
+        public void AddSpesificPieceToPos(LevelsSO so)
+        {
+            foreach (PlacedNumber placed in so.PlacedNumberList)
+            {
+                Destroy(PieceGrid[placed.PlacedNumberX, placed.PlacedNumberY].gameObject);
+
+                Piece newPiece = Instantiate(_piecePrefab).GetComponent<Piece>().Init(placed.PlacedNumberAndColor, placed.PlacedNumberX, placed.PlacedNumberY, PieceMargin);
+                PieceGrid[placed.PlacedNumberX, placed.PlacedNumberY] = newPiece;
+            }
         }
         #endregion
     }

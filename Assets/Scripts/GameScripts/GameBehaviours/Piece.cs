@@ -82,9 +82,6 @@ namespace Rootcraft.CollectNumber.Level
         #region Pop
         private void Pop()
         {
-            if(gameObject == null)
-                return;
-
             _gmInstance.PopingList.RemoveAll(piece => piece == this);
             Destroy(gameObject);
         }
@@ -108,17 +105,16 @@ namespace Rootcraft.CollectNumber.Level
             for (int i = 0; i < popList.Count; i++)
             {
                 Piece piece = popList[i];
+                piece._renderer.color = Color.white;
 
                 posInGrid.Add(new(){x = piece.RowInGrid, y = piece.ColumnInGrid});
-
-                piece._renderer.color = Color.white;
             }
 
             for (int i = 0; i < popList.Count; i++)
             {
                 yield return new WaitForSeconds(0.1f);
                 Piece piece = popList[i];
-                piece.Pop();
+                piece?.Pop();
             }
 
             getPosInGrid(posInGrid);
@@ -154,7 +150,6 @@ namespace Rootcraft.CollectNumber.Level
 
             yield return new WaitUntil(() => completedAsyncCount == 2);
 
-            Debug.Log($"size out {fallDownPosList.Count}");
             _gmInstance.FallDown(fallDownPosList);
         }
 
@@ -187,6 +182,5 @@ namespace Rootcraft.CollectNumber.Level
             return 1 + grid[xPos, yPos].ChainPop(deltaX, deltaY, ref pieceList);
         }
         #endregion
-
     }
 }

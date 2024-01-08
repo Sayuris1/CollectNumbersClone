@@ -24,7 +24,7 @@ namespace Rootcraft.CollectNumber.Level
     public struct PlacedNumber
     {
         public NumbersAndColorsSO PlacedNumberAndColor;
-        public int PlacedNumberRow;
-        public int PlacedNumberColumn;
+        public int PlacedNumberX;
+        public int PlacedNumberY;
     }
 }
