@@ -17,7 +17,7 @@ namespace Rootcraft.CollectNumber.Level
 
         [SerializeField] private TMP_Text _tmp;
         private SpriteRenderer _renderer;
-        private static LevelManager _lmInstance;
+        private static GridManager _gmInstance;
 
         private void Awake()
         {
@@ -26,8 +26,8 @@ namespace Rootcraft.CollectNumber.Level
 
         private void Start()
         {
-            if(_lmInstance == null)
-                _lmInstance = LevelManager.Instance;
+            if(_gmInstance == null)
+                _gmInstance = GridManager.Instance;
         }
 
         #region Data
@@ -42,7 +42,7 @@ namespace Rootcraft.CollectNumber.Level
 
         public void Increase()
         {
-            if(_lmInstance.PopingList.Contains(this))
+            if(_gmInstance.PopingList.Contains(this))
                 return;
 
             int newPieceNo = PieceNo + 1;
@@ -58,7 +58,7 @@ namespace Rootcraft.CollectNumber.Level
             NumbersAndColorsSO so = ResourceManager.Instance.GetNumberAndColor(newPieceNo.ToString());
             ApplyData(so);
 
-            _lmInstance.StartCoroutine(FindChainToPop());
+            _gmInstance.StartCoroutine(FindChainToPop());
         }
 
         private void ApplyData(NumbersAndColorsSO so)
@@ -71,7 +71,6 @@ namespace Rootcraft.CollectNumber.Level
 
         public void SetRowColumn(int row, int column, Vector3 margin)
         {
-            Debug.Log($"old: {ColumnInGrid} new: {column}");
             RowInGrid = row;
             ColumnInGrid = column;
 
@@ -86,7 +85,7 @@ namespace Rootcraft.CollectNumber.Level
             if(gameObject == null)
                 return;
 
-            _lmInstance.PopingList.RemoveAll(piece => piece == this);
+            _gmInstance.PopingList.RemoveAll(piece => piece == this);
             Destroy(gameObject);
         }
 
@@ -102,7 +101,7 @@ namespace Rootcraft.CollectNumber.Level
             }
 
             // Store poping pieces so we can ignore them
-            _lmInstance.PopingList.AddRange(popList);
+            _gmInstance.PopingList.AddRange(popList);
 
             yield return new WaitForSeconds(0.2f);
 
@@ -132,7 +131,7 @@ namespace Rootcraft.CollectNumber.Level
             List<PiecePos> fallDownPosList = new();
 
             int rowChainCount = ChainPop(1, 0, ref popList) + ChainPop(-1, 0, ref popList);
-            _lmInstance.StartCoroutine(PopThenFill(rowChainCount, popList, (list) =>
+            _gmInstance.StartCoroutine(PopThenFill(rowChainCount, popList, (list) =>
             {
                 fallDownPosList.AddRange(list);
                 completedAsyncCount++;
@@ -147,7 +146,7 @@ namespace Rootcraft.CollectNumber.Level
             if(rowChainCount > 3)
                 popList.RemoveAt(0);
 
-            _lmInstance.StartCoroutine(PopThenFill(columnChainCount, popList, (list) =>
+            _gmInstance.StartCoroutine(PopThenFill(columnChainCount, popList, (list) =>
             {
                 fallDownPosList.AddRange(list);
                 completedAsyncCount++;
@@ -156,7 +155,7 @@ namespace Rootcraft.CollectNumber.Level
             yield return new WaitUntil(() => completedAsyncCount == 2);
 
             Debug.Log($"size out {fallDownPosList.Count}");
-            _lmInstance.FallDown(fallDownPosList);
+            _gmInstance.FallDown(fallDownPosList);
         }
 
         // Return 0 if no chain
@@ -164,13 +163,13 @@ namespace Rootcraft.CollectNumber.Level
         // Return 1 + self if chain continues
         private int ChainPop(int deltaX, int deltaY, ref List<Piece> pieceList)
         {
-            Piece[,] grid = _lmInstance.PieceGrid;
+            Piece[,] grid = _gmInstance.PieceGrid;
             int xPos = RowInGrid + deltaX;
             int yPos = ColumnInGrid + deltaY;
 
             if(pieceList[0].PieceNo != PieceNo)
                 return 0;
-            else if(pieceList[0] != this && _lmInstance.PopingList.Contains(this)) // Ignore if in ignore list
+            else if(pieceList[0] != this && _gmInstance.PopingList.Contains(this)) // Ignore if in ignore list
                 return 0;
             else // This piece can pop
             {

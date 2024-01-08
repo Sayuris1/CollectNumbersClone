@@ -1,3 +1,5 @@
+using System;
+
 namespace Rootcraft.CollectNumber.Level
 {
     public struct ChainedPiece
@@ -16,5 +18,13 @@ namespace Rootcraft.CollectNumber.Level
     {
         public int StartY;
         public int EmptyCount;
+    }
+
+    [Serializable]
+    public struct PlacedNumber
+    {
+        public NumbersAndColorsSO PlacedNumberAndColor;
+        public int PlacedNumberRow;
+        public int PlacedNumberColumn;
     }
 }

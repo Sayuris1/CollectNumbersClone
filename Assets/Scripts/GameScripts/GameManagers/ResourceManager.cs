@@ -12,8 +12,10 @@ namespace Rootcraft.CollectNumber.Resource
     {
         public int NumbersAndColorsLenght {get {return _numbersAndColorsDict.Count;}}
         public AsyncOperationHandle NumbersAndColorsLoadHandle;
+        public AsyncOperationHandle LevelsLoadHandle;
         
         private Dictionary<string, NumbersAndColorsSO> _numbersAndColorsDict;
+        private Dictionary<string, LevelsSO> _levelsDict;
         private List<string> _numbersAndColorsKeyList;
 
         protected override void Awake()
@@ -21,6 +23,7 @@ namespace Rootcraft.CollectNumber.Resource
             base.Awake();
 
             LoadNumbersAndColors();
+            LoadLevels();
         }
 
         #region Loaders
@@ -39,6 +42,20 @@ namespace Rootcraft.CollectNumber.Resource
                 _numbersAndColorsKeyList = new(_numbersAndColorsDict.Keys);
             };
         }
+
+        private void LoadLevels()
+        {
+            var handle = LoadAssets<LevelsSO>("Levels");
+            LevelsLoadHandle = handle;
+
+            handle.Completed += (h) =>
+            {
+                _levelsDict = OnCompleteLoad<LevelsSO>(handle, (d, i) =>
+                {
+                    d.Add(i.name, i);
+                });
+            };
+        }
         #endregion
 
         #region Getters
@@ -53,6 +70,11 @@ namespace Rootcraft.CollectNumber.Resource
             string randomKey = _numbersAndColorsKeyList.Except(ignoreList).ElementAt(Random.Range(0, _numbersAndColorsKeyList.Count - ignoreList.Count));
 
             return _numbersAndColorsDict[randomKey];
+        }
+
+        public LevelsSO GetLevel(string key)
+        {
+            return _levelsDict[key];
         }
         #endregion
 
