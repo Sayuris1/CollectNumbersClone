@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Rootcraft.CollectNumber.Resource;
@@ -30,10 +31,9 @@ namespace Rootcraft.CollectNumber.Level
         }
 
         #region Data
-        public Piece Init(NumbersAndColorsSO so, int row, int column)
+        public Piece Init(NumbersAndColorsSO so, int row, int column, Vector3 margin)
         {
-            RowInGrid = row;
-            ColumnInGrid = column;
+            SetRowColumn(row, column, margin);
 
             ApplyData(so);
 
@@ -58,7 +58,7 @@ namespace Rootcraft.CollectNumber.Level
             NumbersAndColorsSO so = ResourceManager.Instance.GetNumberAndColor(newPieceNo.ToString());
             ApplyData(so);
 
-            FindChainToPop();
+            _lmInstance.StartCoroutine(FindChainToPop());
         }
 
         private void ApplyData(NumbersAndColorsSO so)
@@ -68,54 +68,75 @@ namespace Rootcraft.CollectNumber.Level
             _tmp.text = PieceNo.ToString();
             _renderer.color = so.Color;
         }
+
+        public void SetRowColumn(int row, int column, Vector3 margin)
+        {
+            Debug.Log($"old: {ColumnInGrid} new: {column}");
+            RowInGrid = row;
+            ColumnInGrid = column;
+
+            Vector3 pos = new(row * margin.x, column * margin.y, 0);
+            transform.position = pos;
+        }
         #endregion
 
         #region Pop
         private void Pop()
         {
+            if(gameObject == null)
+                return;
+
             _lmInstance.PopingList.RemoveAll(piece => piece == this);
             Destroy(gameObject);
         }
 
-        private IEnumerator PopThenFill(int chainCount, List<Piece> popList)
+        private IEnumerator PopThenFill(int chainCount, List<Piece> popList, Action<List<PiecePos>> getPosInGrid)
         {
-            if(chainCount > 3)
+            // Copy grid poses before delete
+            List<PiecePos> posInGrid = new();
+
+            if(chainCount <= 3)
             {
-                // Copy grid poses before delete
-                PiecePos[] posInGrid = new PiecePos[popList.Count];
-                // Store poping pieces so we can ignore them
-                _lmInstance.PopingList.AddRange(popList);
-
-                yield return new WaitForSeconds(0.2f);
-
-                for (int i = 0; i < popList.Count; i++)
-                {
-                    Piece piece = popList[i];
-
-                    posInGrid[i].x = piece.RowInGrid;
-                    posInGrid[i].y = piece.ColumnInGrid;
-
-                    piece._renderer.color = Color.white;
-                }
-
-                for (int i = 0; i < popList.Count; i++)
-                {
-                    yield return new WaitForSeconds(0.1f);
-                    Piece piece = popList[i];
-                    piece.Pop();
-                }
-
-                yield return new WaitForSeconds(0.3f);
-                _lmInstance.FillGaps(posInGrid);
+                getPosInGrid(posInGrid);
+                yield break;
             }
+
+            // Store poping pieces so we can ignore them
+            _lmInstance.PopingList.AddRange(popList);
+
+            yield return new WaitForSeconds(0.2f);
+
+            for (int i = 0; i < popList.Count; i++)
+            {
+                Piece piece = popList[i];
+
+                posInGrid.Add(new(){x = piece.RowInGrid, y = piece.ColumnInGrid});
+
+                piece._renderer.color = Color.white;
+            }
+
+            for (int i = 0; i < popList.Count; i++)
+            {
+                yield return new WaitForSeconds(0.1f);
+                Piece piece = popList[i];
+                piece.Pop();
+            }
+
+            getPosInGrid(posInGrid);
         }
 
-        public void FindChainToPop()
+        public IEnumerator FindChainToPop()
         {
+            int completedAsyncCount = 0;
             List<Piece> popList = new(){this};
+            List<PiecePos> fallDownPosList = new();
 
             int rowChainCount = ChainPop(1, 0, ref popList) + ChainPop(-1, 0, ref popList);
-            _lmInstance.StartCoroutine(PopThenFill(rowChainCount, popList));
+            _lmInstance.StartCoroutine(PopThenFill(rowChainCount, popList, (list) =>
+            {
+                fallDownPosList.AddRange(list);
+                completedAsyncCount++;
+            }));
 
             // Reset
             popList = new(){this};
@@ -126,7 +147,16 @@ namespace Rootcraft.CollectNumber.Level
             if(rowChainCount > 3)
                 popList.RemoveAt(0);
 
-            _lmInstance.StartCoroutine(PopThenFill(columnChainCount, popList));
+            _lmInstance.StartCoroutine(PopThenFill(columnChainCount, popList, (list) =>
+            {
+                fallDownPosList.AddRange(list);
+                completedAsyncCount++;
+            }));
+
+            yield return new WaitUntil(() => completedAsyncCount == 2);
+
+            Debug.Log($"size out {fallDownPosList.Count}");
+            _lmInstance.FallDown(fallDownPosList);
         }
 
         // Return 0 if no chain

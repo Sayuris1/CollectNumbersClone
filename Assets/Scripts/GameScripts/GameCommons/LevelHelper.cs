@@ -6,10 +6,15 @@ namespace Rootcraft.CollectNumber.Level
         public int ChainedCount;
     }
 
-
     public struct PiecePos
     {
         public int x;
         public int y;
+    }
+
+    public struct EmptyByX
+    {
+        public int StartY;
+        public int EmptyCount;
     }
 }

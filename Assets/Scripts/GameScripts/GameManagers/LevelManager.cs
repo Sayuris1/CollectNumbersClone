@@ -10,12 +10,12 @@ namespace Rootcraft.CollectNumber.Level
     {
         public int Row = 5;
         public int Column = 5;
+        public Vector3 PieceMargin;
 
         [HideInInspector] public Piece[,] PieceGrid;
         [HideInInspector] public List<Piece> PopingList;
 
         [SerializeField] private GameObject _piecePrefab;
-        [SerializeField] private Vector3 PieceMargin;
 
         private ResourceManager _rmInstance;
 
@@ -58,6 +58,44 @@ namespace Rootcraft.CollectNumber.Level
             }
         }
 
+        public void FallDown(List<PiecePos> piecePoses)
+        {
+            EmptyByX[] rowEmptyArray = new EmptyByX[Row].Init();
+            foreach (PiecePos pos in piecePoses)
+                rowEmptyArray[pos.x] = FindFallCounts(rowEmptyArray[pos.x], pos);
+
+            PiecePos[] toFillPosArray = new PiecePos[piecePoses.Count];
+            List<Piece> falledPieceList = new();
+            int fillIndex = 0;
+            for (int i = 0; i < rowEmptyArray.Length; i++)
+            {
+                EmptyByX emptyBy = rowEmptyArray[i];
+
+                if(emptyBy.EmptyCount == 0)
+                    continue;
+
+                for (int index = emptyBy.StartY + emptyBy.EmptyCount - 1; index >= 0; index--)
+                {
+                    if(index - emptyBy.EmptyCount < 0)
+                    {
+                        toFillPosArray[fillIndex].x = i;
+                        toFillPosArray[fillIndex++].y = index;
+                        continue;
+                    }
+
+                    PieceGrid[i, index] = PieceGrid[i, index - emptyBy.EmptyCount];
+                    PieceGrid[i, index].SetRowColumn(i, index, PieceMargin);
+
+                    falledPieceList.Add(PieceGrid[i, index]);
+                }
+            }
+
+            FillGaps(toFillPosArray);
+
+            foreach (Piece piece in falledPieceList)
+                StartCoroutine(piece.FindChainToPop());
+        }
+
         public void FillGaps(PiecePos[] piecePoses)
         {
             int posesLengt = piecePoses.Length;
@@ -75,8 +113,18 @@ namespace Rootcraft.CollectNumber.Level
                 if(newPiece == null)
                     break;
                 
-                newPiece.FindChainToPop();
+                StartCoroutine(newPiece.FindChainToPop());
             }
+        }
+
+        private EmptyByX FindFallCounts(EmptyByX emptyBy, PiecePos pos)
+        {
+            if(emptyBy.StartY > pos.y)
+                emptyBy.StartY = pos.y;
+
+            emptyBy.EmptyCount++;
+
+            return emptyBy;
         }
         #endregion
 
@@ -84,10 +132,7 @@ namespace Rootcraft.CollectNumber.Level
         private Piece InstantiatePiece(int row, int column, List<string> ignoreList = null)
         {
             NumbersAndColorsSO so = _rmInstance.GetRandomNumberAndColor(ignoreList);
-            Piece newPiece = Instantiate(_piecePrefab).GetComponent<Piece>().Init(so, row, column);
-
-            Vector3 pos = new(row * PieceMargin.x, column * PieceMargin.y, 0);
-            newPiece.transform.position = pos;
+            Piece newPiece = Instantiate(_piecePrefab).GetComponent<Piece>().Init(so, row, column, PieceMargin);
 
             PieceGrid[row, column] = newPiece;
 
