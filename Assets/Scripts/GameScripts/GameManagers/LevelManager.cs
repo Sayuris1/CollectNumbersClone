@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Rootcraft.CollectNumber.Resource;
 using static Rootcraft.CollectNumber.Extensions;
 using UnityEngine;
+using System.Collections;
 
 namespace Rootcraft.CollectNumber.Level
 {
@@ -10,7 +11,8 @@ namespace Rootcraft.CollectNumber.Level
         public int Row = 5;
         public int Column = 5;
 
-        public Piece[,] PieceGrid;
+        [HideInInspector] public Piece[,] PieceGrid;
+        [HideInInspector] public List<Piece> PopingList;
 
         [SerializeField] private GameObject _piecePrefab;
         [SerializeField] private Vector3 PieceMargin;
@@ -22,6 +24,7 @@ namespace Rootcraft.CollectNumber.Level
             base.Awake();
 
             PieceGrid = new Piece[Row, Column];
+            PopingList = new();
         }
 
         private void Start()
@@ -29,10 +32,11 @@ namespace Rootcraft.CollectNumber.Level
             _rmInstance = ResourceManager.Instance;
 
             // Wait for level data
-            _rmInstance.NumbersAndColorsLoadHandle.Completed += (_) => CreateNewLevel(Row, Column);
+            _rmInstance.NumbersAndColorsLoadHandle.Completed += (_) => CreateGrid(Row, Column);
         }
 
-        private void CreateNewLevel(int maxRow, int maxColumn)
+        #region Grid
+        private void CreateGrid(int maxRow, int maxColumn)
         {
             // Need to store column data since we are going to add to the same column in the next outer loop step.
             ChainedPiece[] chainedPiecePerColumn = new ChainedPiece[maxRow];
@@ -44,15 +48,53 @@ namespace Rootcraft.CollectNumber.Level
                 for (int x = 0; x < maxColumn; x++)
                 {
                     ChainedPiece currentColumnChainedPiece = chainedPiecePerColumn[x];
-                    PlaceNewPieceInGrid(ref currentColumnChainedPiece, ref currentRowChainedPiece, x, y);
+
+                    Piece newPiece = PlaceNewPieceInGrid(ref currentColumnChainedPiece, ref currentRowChainedPiece, x, y);
+                    UpdateChainedPiece(newPiece, ref currentRowChainedPiece);
+                    UpdateChainedPiece(newPiece, ref currentColumnChainedPiece);
                     // Struct is passed by value, so we need to re-assign
                     chainedPiecePerColumn[x] = currentColumnChainedPiece;
                 }
             }
         }
 
+        public void FillGaps(PiecePos[] piecePoses)
+        {
+            int posesLengt = piecePoses.Length;
+            Piece[] newPieces = new Piece[posesLengt];
 
-        private void PlaceNewPieceInGrid(ref ChainedPiece currentColumnChainedPiece, ref ChainedPiece currentRowChainedPiece, int x, int y)
+            for (int i = 0; i < posesLengt; i++)
+            {
+                PiecePos pos = piecePoses[i];
+                newPieces[i] = InstantiatePiece(pos.x, pos.y);
+            }
+
+            for (int i = 0; i < posesLengt; i++)
+            {
+                Piece newPiece = newPieces[i];
+                if(newPiece == null)
+                    break;
+                
+                newPiece.FindChainToPop();
+            }
+        }
+        #endregion
+
+        #region Piece
+        private Piece InstantiatePiece(int row, int column, List<string> ignoreList = null)
+        {
+            NumbersAndColorsSO so = _rmInstance.GetRandomNumberAndColor(ignoreList);
+            Piece newPiece = Instantiate(_piecePrefab).GetComponent<Piece>().Init(so, row, column);
+
+            Vector3 pos = new(row * PieceMargin.x, column * PieceMargin.y, 0);
+            newPiece.transform.position = pos;
+
+            PieceGrid[row, column] = newPiece;
+
+            return newPiece;
+        }
+
+        private Piece PlaceNewPieceInGrid(ref ChainedPiece currentColumnChainedPiece, ref ChainedPiece currentRowChainedPiece, int x, int y)
         {
             Piece newPiece;
             if (currentRowChainedPiece.ChainedCount < 1 && currentColumnChainedPiece.ChainedCount < 1)
@@ -63,23 +105,7 @@ namespace Rootcraft.CollectNumber.Level
                 ignoreList.AddChainedPieceIfPop(currentRowChainedPiece).AddChainedPieceIfPop(currentColumnChainedPiece);
 
                 newPiece = InstantiatePiece(x, y, ignoreList);
-                newPiece.PopNumbers.Add(currentRowChainedPiece.PieceNo);
-
             }
-
-            PieceGrid[x,y] = newPiece;
-
-            UpdateChainedPiece(newPiece, ref currentRowChainedPiece);
-            UpdateChainedPiece(newPiece, ref currentColumnChainedPiece);
-        }
-
-        private Piece InstantiatePiece(int row, int column, List<string> ignoreList = null)
-        {
-            NumbersAndColorsSO so = _rmInstance.GetRandomNumberAndColor(ignoreList);
-            Piece newPiece = Instantiate(_piecePrefab).GetComponent<Piece>().Init(so, row, column);
-
-            Vector3 pos = new(row * PieceMargin.x, column * PieceMargin.y, 0);
-            newPiece.transform.position = pos;
 
             return newPiece;
         }
@@ -96,5 +122,6 @@ namespace Rootcraft.CollectNumber.Level
 
             Debug.Log($"no: {chainedPiece.PieceNo}, count: {chainedPiece.ChainedCount}");
         }
+        #endregion
     }
 }

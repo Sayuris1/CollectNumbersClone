@@ -5,4 +5,11 @@ namespace Rootcraft.CollectNumber.Level
         public int PieceNo;
         public int ChainedCount;
     }
+
+
+    public struct PiecePos
+    {
+        public int x;
+        public int y;
+    }
 }
