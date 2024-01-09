@@ -27,4 +27,11 @@ namespace Rootcraft.CollectNumber.Level
         public int PlacedNumberX;
         public int PlacedNumberY;
     }
+
+    [Serializable]
+    public struct LevelRequiredNumber
+    {
+        public NumbersAndColorsSO PlacedNumberAndColor;
+        public int RequiredCount;
+    }
 }

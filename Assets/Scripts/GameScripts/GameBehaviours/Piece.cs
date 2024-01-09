@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Rootcraft.CollectNumber.Resource;
+using Rootcraft.CollectNumber.UI;
 using TMPro;
 using UnityEngine;
 
@@ -58,6 +59,8 @@ namespace Rootcraft.CollectNumber.Level
             NumbersAndColorsSO so = ResourceManager.Instance.GetNumberAndColor(newPieceNo.ToString());
             ApplyData(so);
 
+            LevelManager.Instance.PieceIncreased();
+
             _gmInstance.StartCoroutine(FindChainToPop());
         }
 
@@ -83,7 +86,8 @@ namespace Rootcraft.CollectNumber.Level
         private void Pop()
         {
             _gmInstance.PopingList.RemoveAll(piece => piece == this);
-            Destroy(gameObject);
+            if(this != null)
+                Destroy(gameObject);
         }
 
         private IEnumerator PopThenFill(int chainCount, List<Piece> popList, Action<List<PiecePos>> getPosInGrid)
@@ -112,9 +116,9 @@ namespace Rootcraft.CollectNumber.Level
 
             for (int i = 0; i < popList.Count; i++)
             {
-                yield return new WaitForSeconds(0.1f);
                 Piece piece = popList[i];
-                piece?.Pop();
+                yield return new WaitForSeconds(0.1f);
+                piece.Pop();
             }
 
             getPosInGrid(posInGrid);
@@ -127,7 +131,7 @@ namespace Rootcraft.CollectNumber.Level
             List<PiecePos> fallDownPosList = new();
 
             int rowChainCount = ChainPop(1, 0, ref popList) + ChainPop(-1, 0, ref popList);
-            _gmInstance.StartCoroutine(PopThenFill(rowChainCount, popList, (list) =>
+            yield return _gmInstance.StartCoroutine(PopThenFill(rowChainCount, popList, (list) =>
             {
                 fallDownPosList.AddRange(list);
                 completedAsyncCount++;
@@ -150,7 +154,7 @@ namespace Rootcraft.CollectNumber.Level
 
             yield return new WaitUntil(() => completedAsyncCount == 2);
 
-            _gmInstance.FallDown(fallDownPosList);
+            _gmInstance.StartCoroutine(_gmInstance.FallDown(fallDownPosList));
         }
 
         // Return 0 if no chain

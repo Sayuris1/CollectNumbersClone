@@ -4,11 +4,14 @@ using static Rootcraft.CollectNumber.Extensions;
 using UnityEngine;
 using System.Collections;
 using System.Linq;
+using Rootcraft.CollectNumber.UI;
 
 namespace Rootcraft.CollectNumber.Level
 {
     public class LevelManager : Singleton<LevelManager>
     {
+        [HideInInspector] public int _remainigMoves;
+
         private ResourceManager _rmInstance;
         private GridManager _gmInstance;
 
@@ -30,8 +33,11 @@ namespace Rootcraft.CollectNumber.Level
             // Wait for level data
             _rmInstance.LevelsLoadHandle.Completed += (_) =>
             {
-                SetNextLevel();
-                _rmInstance.NumbersAndColorsLoadHandle.Completed += (_) => _gmInstance.CreateGrid(_currentLevel);
+                _rmInstance.NumbersAndColorsLoadHandle.Completed += (_) =>
+                {
+                    SetNextLevel();
+                    _gmInstance.CreateGrid(_currentLevel);
+                };
             };
         }
 
@@ -39,8 +45,21 @@ namespace Rootcraft.CollectNumber.Level
         {
             _currentLevel = _rmInstance.GetLevel($"level{++_currentLevelIndex}");
 
+            _remainigMoves = _currentLevel.RemainigMoves;
+
             GridManager.Instance.SetNextLevel(_currentLevel.Row, _currentLevel.Column);
+            MainUIManager.Instance.SetNextLevel(_currentLevel.LevelRequiredNumbers, _remainigMoves.ToString());
             GameClient.Instance.SetCameraPosZoomFromGrid(_currentLevel.Row, _currentLevel.Column);
+        }
+
+        public void PieceIncreased()
+        {
+            _remainigMoves--;
+
+            MainUIManager.Instance.UpdateRemainig(_remainigMoves.ToString());
+
+            if(_remainigMoves <= 0)
+                Debug.Log("gameOVer");
         }
 
         public List<string> GetLevelIgnoreList(int x, int y)

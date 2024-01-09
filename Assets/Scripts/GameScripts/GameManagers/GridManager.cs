@@ -3,6 +3,7 @@ using Rootcraft.CollectNumber.Resource;
 using UnityEngine;
 using Rootcraft.CollectNumber.Level;
 using System;
+using System.Collections;
 
 namespace Rootcraft.CollectNumber
 {
@@ -16,6 +17,7 @@ namespace Rootcraft.CollectNumber
         [HideInInspector] public List<Piece> PopingList;
 
         [SerializeField] private GameObject _piecePrefab;
+        [SerializeField] private GameObject _pieceParent;
 
         private ResourceManager _rmInstance;
 
@@ -66,7 +68,7 @@ namespace Rootcraft.CollectNumber
             AddSpesificPieceToPos(level);
         }
 
-        public void FallDown(List<PiecePos> piecePoses)
+        public IEnumerator FallDown(List<PiecePos> piecePoses)
         {
             EmptyByX[] rowEmptyArray = new EmptyByX[Row].Init();
             foreach (PiecePos pos in piecePoses)
@@ -90,6 +92,8 @@ namespace Rootcraft.CollectNumber
                         toFillPosArray[fillIndex++].y = index;
                         continue;
                     }
+
+                    yield return new WaitUntil(() => PieceGrid[i, index - emptyBy.EmptyCount] != null);
 
                     PieceGrid[i, index] = PieceGrid[i, index - emptyBy.EmptyCount];
                     PieceGrid[i, index].SetRowColumn(i, index, PieceMargin);
@@ -141,6 +145,7 @@ namespace Rootcraft.CollectNumber
         {
             NumbersAndColorsSO so = _rmInstance.GetRandomNumberAndColor(ignoreList);
             Piece newPiece = Instantiate(_piecePrefab).GetComponent<Piece>().Init(so, row, column, PieceMargin);
+            newPiece.transform.SetParent(_pieceParent.transform);
 
             PieceGrid[row, column] = newPiece;
 
@@ -183,6 +188,7 @@ namespace Rootcraft.CollectNumber
                 Destroy(PieceGrid[placed.PlacedNumberX, placed.PlacedNumberY].gameObject);
 
                 Piece newPiece = Instantiate(_piecePrefab).GetComponent<Piece>().Init(placed.PlacedNumberAndColor, placed.PlacedNumberX, placed.PlacedNumberY, PieceMargin);
+                newPiece.transform.SetParent(_pieceParent.transform);
                 PieceGrid[placed.PlacedNumberX, placed.PlacedNumberY] = newPiece;
             }
         }

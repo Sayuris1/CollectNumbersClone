@@ -14,7 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Row: 5
   Column: 5
+  RemainigMoves: 12
   PlacedNumberList:
   - PlacedNumberAndColor: {fileID: 11400000, guid: 491676ebecf31054b88ff08339ff17b2, type: 2}
-    PlacedNumberX: 2
-    PlacedNumberY: 2
+    PlacedNumberX: 0
+    PlacedNumberY: 0
+  LevelRequiredNumbers:
+  - PlacedNumberAndColor: {fileID: 11400000, guid: 491676ebecf31054b88ff08339ff17b2, type: 2}
+    RequiredCount: 3
