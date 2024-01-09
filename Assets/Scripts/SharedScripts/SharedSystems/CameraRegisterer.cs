@@ -1,3 +1,4 @@
+using Rootcraft.CollectNumber;
 using UnityEngine;
 
 namespace Rootcraft
@@ -16,7 +17,7 @@ namespace Rootcraft
         private void Start()
         {
             if(CameraType == CameraTypes.Game)
-                CollectNumber.GameClient.Instance.GameCamera = GetComponent<Camera>();
+                GameClient.Instance.RegisterGameCamera(GetComponent<Camera>());
         }
     }
 }
