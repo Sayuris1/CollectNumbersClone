@@ -10,15 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aa6a3e2bfbcf199428fea93f631f7799, type: 3}
-  m_Name: level1
+  m_Name: level3
   m_EditorClassIdentifier: 
-  Row: 5
-  Column: 5
-  RemainigMoves: 12
+  Row: 7
+  Column: 7
+  RemainigMoves: 8
   PlacedNumberList:
   - PlacedNumberAndColor: {fileID: 11400000, guid: d6ac99d7da1317a45b24b848779938ff, type: 2}
     PlacedNumberX: 0
     PlacedNumberY: 0
   LevelRequiredNumbers:
+  - PlacedNumberAndColor: {fileID: 11400000, guid: 3b48d9ccb8561574eb6c7cb8d53126c2, type: 2}
+    RequiredCount: 5
   - PlacedNumberAndColor: {fileID: 11400000, guid: d6ac99d7da1317a45b24b848779938ff, type: 2}
+    RequiredCount: 4
+  - PlacedNumberAndColor: {fileID: 11400000, guid: fdc0fef0b3d0c7445b93f398205828fa, type: 2}
     RequiredCount: 3

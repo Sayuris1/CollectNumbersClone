@@ -11,6 +11,7 @@ namespace Rootcraft.CollectNumber.Resource
     public class ResourceManager : Singleton<ResourceManager>
     {
         public int NumbersAndColorsLenght {get {return _numbersAndColorsDict.Count;}}
+        public int LevelsLenght {get {return _levelsDict.Count;}}
         public AsyncOperationHandle NumbersAndColorsLoadHandle;
         public AsyncOperationHandle LevelsLoadHandle;
         

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using Rootcraft.CollectNumber.Resource;
 using Rootcraft.CollectNumber.UI;
 using TMPro;
@@ -8,7 +9,6 @@ using UnityEngine;
 
 namespace Rootcraft.CollectNumber.Level
 {
-    [RequireComponent(typeof(SpriteRenderer))]
     public class Piece : MonoBehaviour
     {
         [HideInInspector] public int PieceNo;
@@ -17,12 +17,12 @@ namespace Rootcraft.CollectNumber.Level
         [HideInInspector] public int ColumnInGrid;
 
         [SerializeField] private TMP_Text _tmp;
-        private SpriteRenderer _renderer;
+        [SerializeField] private SpriteRenderer _renderer;
         private static GridManager _gmInstance;
 
         private void Awake()
         {
-            _renderer = GetComponent<SpriteRenderer>();
+            _realScale = _renderer.transform.localScale.x;
         }
 
         private void Start()
@@ -46,6 +46,8 @@ namespace Rootcraft.CollectNumber.Level
             if(_gmInstance.PopingList.Contains(this))
                 return;
 
+            LevelManager.Instance.PieceIncreased();
+
             int newPieceNo = PieceNo + 1;
             if(PieceNo < 0 || newPieceNo > ResourceManager.Instance.NumbersAndColorsLenght)   
             {
@@ -58,8 +60,6 @@ namespace Rootcraft.CollectNumber.Level
 
             NumbersAndColorsSO so = ResourceManager.Instance.GetNumberAndColor(newPieceNo.ToString());
             ApplyData(so);
-
-            LevelManager.Instance.PieceIncreased();
 
             _gmInstance.StartCoroutine(FindChainToPop());
         }
@@ -86,6 +86,8 @@ namespace Rootcraft.CollectNumber.Level
         private void Pop()
         {
             _gmInstance.PopingList.RemoveAll(piece => piece == this);
+            LevelManager.Instance.Poped(PieceNo);
+
             if(this != null)
                 Destroy(gameObject);
         }
@@ -184,6 +186,22 @@ namespace Rootcraft.CollectNumber.Level
             }
 
             return 1 + grid[xPos, yPos].ChainPop(deltaX, deltaY, ref pieceList);
+        }
+        #endregion
+
+        #region Anim
+        private const string SHRING_ANIM_ID = "shring";
+        private float _realScale;
+        public void ShringDown()
+        {
+            DOTween.Kill(true, SHRING_ANIM_ID);
+            _renderer.transform.DOScale(_realScale * 0.8f, 0.05f).SetEase(Ease.InOutElastic).SetId(SHRING_ANIM_ID);
+        }
+
+        public void ShringUp()
+        {
+            DOTween.Kill(true, SHRING_ANIM_ID);
+            _renderer.transform.DOScale(_realScale, 0.5f).SetEase(Ease.InOutElastic).SetId(SHRING_ANIM_ID);
         }
         #endregion
     }

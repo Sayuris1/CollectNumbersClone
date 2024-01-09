@@ -43,6 +43,18 @@ namespace Rootcraft.CollectNumber.InputSystem
             }
         #endif
 
+        #region MapControl
+        public void EnableGameInput()
+        {
+            _gameInputActionMap.Enable();
+        }
+
+        public void DisableGameInput()
+        {
+            _gameInputActionMap.Disable();
+        }
+        #endregion
+
         #region Bindings
         public void OnPointerHold(InputAction.CallbackContext context)
         {

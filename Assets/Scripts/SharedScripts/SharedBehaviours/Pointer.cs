@@ -25,7 +25,10 @@ namespace Rootcraft.CollectNumber.InputSystem
                 return;
             
             if (_lastCollider.TryGetComponent(out Piece piece))
+            {
                 piece.Increase();
+                piece.ShringUp();
+            }
         }
 
         public void Press(InputAction.CallbackContext context)
@@ -34,12 +37,18 @@ namespace Rootcraft.CollectNumber.InputSystem
         private void OnTriggerEnter(Collider other)
         {
             _lastCollider = other;
+
+            if (other.TryGetComponent(out Piece piece))
+                piece.ShringDown();
         }
 
         private void OnTriggerExit(Collider other)
         {
             if(_lastCollider == other)
                 _lastCollider = null;
+
+            if (other.TryGetComponent(out Piece piece))
+                piece.ShringUp();
         }
     }
 }

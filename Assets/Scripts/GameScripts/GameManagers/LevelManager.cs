@@ -5,12 +5,14 @@ using UnityEngine;
 using System.Collections;
 using System.Linq;
 using Rootcraft.CollectNumber.UI;
+using Unity.Mathematics;
 
 namespace Rootcraft.CollectNumber.Level
 {
     public class LevelManager : Singleton<LevelManager>
     {
-        [HideInInspector] public int _remainigMoves;
+        private int _remainigMoves;
+        private Dictionary<int, int> _remainingRequired;
 
         private ResourceManager _rmInstance;
         private GridManager _gmInstance;
@@ -36,22 +38,36 @@ namespace Rootcraft.CollectNumber.Level
                 _rmInstance.NumbersAndColorsLoadHandle.Completed += (_) =>
                 {
                     SetNextLevel();
-                    _gmInstance.CreateGrid(_currentLevel);
                 };
             };
         }
 
-        private void SetNextLevel()
+        #region LevelControls
+        public void SetLevel()
         {
-            _currentLevel = _rmInstance.GetLevel($"level{++_currentLevelIndex}");
-
             _remainigMoves = _currentLevel.RemainigMoves;
+
+            _remainingRequired = new();
+            foreach (LevelRequiredNumber item in _currentLevel.LevelRequiredNumbers)
+                _remainingRequired.Add(item.PlacedNumberAndColor.Number, item.RequiredCount);
 
             GridManager.Instance.SetNextLevel(_currentLevel.Row, _currentLevel.Column);
             MainUIManager.Instance.SetNextLevel(_currentLevel.LevelRequiredNumbers, _remainigMoves.ToString());
             GameClient.Instance.SetCameraPosZoomFromGrid(_currentLevel.Row, _currentLevel.Column);
+
+            _gmInstance.CreateGrid(_currentLevel);
         }
 
+        public void SetNextLevel()
+        {
+            _currentLevelIndex = math.min(++_currentLevelIndex, _rmInstance.LevelsLenght);
+            _currentLevel = _rmInstance.GetLevel($"level{_currentLevelIndex}");
+
+            SetLevel();
+        }
+        #endregion
+
+        #region LevelStatus
         public void PieceIncreased()
         {
             _remainigMoves--;
@@ -59,7 +75,7 @@ namespace Rootcraft.CollectNumber.Level
             MainUIManager.Instance.UpdateRemainig(_remainigMoves.ToString());
 
             if(_remainigMoves <= 0)
-                Debug.Log("gameOVer");
+                MainUIManager.Instance.EnableRetry();
         }
 
         public List<string> GetLevelIgnoreList(int x, int y)
@@ -75,5 +91,23 @@ namespace Rootcraft.CollectNumber.Level
             
             return levelIgnoreList;
         }
+
+        public void Poped(int no)
+        {
+            if(!_remainingRequired.ContainsKey(no))
+                return;
+
+            int req = math.max(--_remainingRequired[no], 0);
+            MainUIManager.Instance.UpdateRemainigRequired(no, req.ToString());
+
+            foreach (KeyValuePair<int, int> requ in _remainingRequired)
+            {
+                if(requ.Value != 0)
+                    break;
+                
+                MainUIManager.Instance.EnableNextLevel();
+            }
+        }
+        #endregion
     }
 }

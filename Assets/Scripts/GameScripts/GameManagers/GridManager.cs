@@ -39,6 +39,9 @@ namespace Rootcraft.CollectNumber
             Column = column;
 
             PieceGrid = new Piece[Row, Column];
+
+            foreach (Transform child in _pieceParent.transform)
+                Destroy(child.gameObject);
         }
 
         #region Grid
